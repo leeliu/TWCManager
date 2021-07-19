@@ -178,6 +178,11 @@ class TeslaPowerwall2:
             logger.debug("Powerwall2 EMS Module Disabled. Skipping getGeneration")
             return 0
 
+        logger.log(logging.INFO5, "Powerwall battery at: " + str(round(self.batteryLevel, 2))
+        + "%. Min charge level: " + str(self.minSOE * 1.05)
+        + "%. Grid usage: " + str(round(self.importW - self.exportW, 2))
+        + "W.")
+
         if self.batteryLevel > (self.minSOE * 1.05):
             self.suppressGeneration = False
         if self.batteryLevel < (self.minSOE * 0.95):
