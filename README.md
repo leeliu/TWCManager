@@ -1,8 +1,8 @@
 # TWCManager
 
-[![Stable Release](https://img.shields.io/badge/Stable_Release-1.2.2-blue)](https://github.com/ngardiner/TWCManager/releases/tag/1.2.2)
-[![Development Release](https://img.shields.io/badge/Devel_Release-1.2.3-green.svg)](https://github.com/ngardiner/TWCManager/tree/main)
-![Build Status](https://github.com/ngardiner/TWCManager/actions/workflows/build.yml/badge.svg)
+[![Stable Release](https://img.shields.io/badge/Stable_Release-1.2.3-blue)](https://github.com/ngardiner/TWCManager/releases/tag/1.2.3)
+[![Development Release](https://img.shields.io/badge/Devel_Release-1.3.0-green.svg)](https://github.com/ngardiner/TWCManager/tree/main)
+![Build Status](https://github.com/ngardiner/TWCManager/actions/workflows/test_suite.yml/badge.svg)
 ![GitHub commits](https://img.shields.io/github/commit-activity/m/ngardiner/TWCManager)
 ![Docker Pulls](https://img.shields.io/docker/pulls/twcmanager/twcmanager.svg)
 ![Contributors](https://img.shields.io/github/contributors/ngardiner/TWCManager)
@@ -64,7 +64,7 @@ EMS Interfaces read solar generation and/or consumption values from an external 
 | [Kostal (Pico/Plenticore)](docs/modules/EMS_Kostal.md) | Available | Support for Kostal Inverters via ModBus |
 | [openHAB](docs/modules/EMS_OpenHab.md)          | Available | Supports openHAB items |
 | [OpenWeatherMap](docs/modules/EMS_OpenWeatherMap.md) | Available | Supports OpenWeatherMap forecast-based tracking where inverter EMS is not available. |
-| [P1 Monitor](docs/modules/EMS_P1Monitor.md}     | Available | Supports P1 Monitor (Energy Monitoring tool for Pi) |
+| [P1 Monitor](docs/modules/EMS_P1Monitor.md)     | Available | Supports P1 Monitor (Energy Monitoring tool for Pi) |
 | [SmartMe](docs/modules/EMS_SmartMe.md)          | Available | Support for smart-me.com API |
 | [SmartPi](docs/modules/EMS_SmartPi.md)          | Available | Support for SmartPi Smart Meter |
 | [SolarEdge](docs/modules/EMS_SolarEdge.md)      | Available | Support for SolarEdge API |
@@ -102,6 +102,7 @@ Status interfaces publish TWCManager status information to external systems. Cur
 | Platform    | Details                                  |
 | ----------- | ---------------------------------------- |
 | TeslaAPI    | Allows start/stop charging via Tesla API |
+| [TeslaMate](docs/modules/Vehicle_TeslaMate.md) | TeslaMate integration (Tesla API Tokens) |
 
 ## Warnings
 

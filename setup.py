@@ -4,7 +4,7 @@ from setuptools import setup, find_namespace_packages
 
 setup(
     name="TWCManager",
-    version="1.2.3",
+    version="1.2.4",
     package_dir={"": "lib"},
     packages=find_namespace_packages(where="lib"),
     python_requires=">= 3.4",
@@ -14,7 +14,7 @@ setup(
         "commentjson < 0.9.0; python_version < '3.6'",
         "commentjson >= 0.8.3; python_version >= '3.6'",
         "cryptography==2.1.4; python_version < '3.6'",
-        "cryptography>=3.4; python_version >= '3.6'",
+        "cryptography<3.4; python_version >= '3.6'",
         "growattServer>=1.0.0",
         "jinja2==2.11.2; python_version == '3.4'",
         "jinja2==2.11.2; python_version == '3.5'",
@@ -22,6 +22,8 @@ setup(
         "MarkupSafe < 2.0.0; python_version < '3.6'",
         "ocpp",
         "paho_mqtt>=1.5.0",
+        "psycopg2 <= 2.8.6; python_version < '3.6'",
+        "psycopg2; python_version >= '3.6'",
         "pyModbusTCP>=0.1.8",
         "pymysql==0.9.3; python_version < '3.6'",
         "pymysql; python_version >= '3.6'",

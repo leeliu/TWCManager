@@ -1,4 +1,4 @@
-DEPS := screen git libffi-dev libssl-dev
+DEPS := screen git libffi-dev libpq-dev libssl-dev
 WEBDEPS := $(DEPS) lighttpd
 SUDO := sudo
 USER := twcmanager
@@ -75,6 +75,15 @@ endif
 endif
 	$(SUDO) ./setup.py install
 endif
+
+test_direct:
+	cd tests && make test_direct
+
+test_service:
+	cd tests && make test_service
+
+test_service_nofail:
+	cd tests && make test_service_nofail
 
 tests:
 	cd tests && make

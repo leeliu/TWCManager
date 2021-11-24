@@ -1,4 +1,7 @@
-all: general_prereqs mqtt_setup mysql_setup run_twcmanager wait preflight api ems
+all: test_direct
+test_direct: general_prereqs mqtt_setup mysql_setup run_twcmanager wait preflight api ems
+test_service: general_prereqs mqtt_setup mysql_setup run_service wait preflight api ems
+test_service_nofail: general_prereqs mqtt_setup mysql_setup run_service_nofail wait
 
 bold:=$(shell tput -T ansi bold)
 red:=$(shell tput -T ansi setaf 1)
@@ -25,13 +28,30 @@ mysql_setup:
 	@echo "${bold}${red}(P4/${pre})${reset} ${yellow}Setup MySQL Database"
 	@sudo /home/docker/.pyenv/shims/python3 scripts/mysql_setup.py
 	@echo "${bold}${red}(P5/${pre})${reset} ${yellow}Environment Preparation"
-	@sudo /home/docker/.pyenv/shims/python3 env_preparation.py
+	@sudo /home/docker/.pyenv/shims/python3 pre-flight/env_preparation.py
 	@echo "${bold}${red}(P6/${pre})${reset} ${yellow}Set up SQLite Database"
 	@sudo -u twcmanager /home/docker/.pyenv/shims/python3 scripts/sqlite_setup.py
 
+run_service:
+	@cd .. && sudo cp contrib/.twcmanager.service.testing /etc/systemd/system/twcmanager.service
+	@sudo apt-get install -y systemctl > /dev/null
+	@echo "${bold}${red}(M1/2)${reset} ${yellow}Running TWCManager"
+	@sudo /usr/bin/systemctl enable twcmanager.service --now
+	@sleep 5
+	@systemctl status twcmanager.service --full
+
+run_service_nofail:
+	@cd .. && sudo cp contrib/.twcmanager.service.testing /etc/systemd/system/twcmanager.service
+	@sudo apt-get install -y systemctl > /dev/null
+	@echo "${bold}${red}(M1/2)${reset} ${yellow}Running TWCManager"
+	@sudo /usr/bin/systemctl enable twcmanager.service --now
+	@sleep 5
+	@systemctl status twcmanager.service --full || exit 0
+	ls -l /var/log/
+
 run_twcmanager:
 	@echo "${bold}${red}(M1/2)${reset} ${yellow}Running TWCManager"
-	@cd .. && sudo -u twcmanager /home/docker/.pyenv/shims/python3 -m TWCManager &
+	@cd .. && sudo -u twcmanager /usr/bin/env PYTHONIOENCODING=UTF-8 /home/docker/.pyenv/shims/python3 -m TWCManager &
 
 upload:
 	@echo Uploading debug files

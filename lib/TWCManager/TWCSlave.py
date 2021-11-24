@@ -5,7 +5,7 @@ import re
 import time
 
 
-logger = logging.getLogger(__name__.rsplit(".")[-1])
+logger = logging.getLogger("\u26FD Slave")
 
 
 class TWCSlave:
@@ -13,6 +13,9 @@ class TWCSlave:
     config = None
     configConfig = None
     TWCID = None
+    __lastAPIAmpsValue = 0
+    __lastAPIAmpsRequest = time.time() + 30
+    __lastAPIAmpsRepeat = 0
     lastVINQuery = 0
     maxAmps = None
     master = None
@@ -447,7 +450,8 @@ class TWCSlave:
 
                 if (
                     now - self.timeLastAmpsOfferedChanged < 60
-                    or now - self.timeReportedAmpsActualChangedSignificantly < 60
+                    or now - self.timeReportedAmpsActualChangedSignificantly
+                    < self.startStopDelay
                     or self.reportedAmpsActual < 4.0
                 ):
                     # We want to tell the car to stop charging. However, it's
@@ -699,13 +703,12 @@ class TWCSlave:
         ):
             desiredAmpsOffered = minAmpsToOffer
 
-        dampenChanges = (
-            True
-            if now
-            - max(self.timeLastAmpsDesiredFlipped, self.timeLastAmpsOfferedChanged)
-            < self.startStopDelay
-            else False
-        )
+        dampenChanges = False
+        if self.master.getModuleByName("Policy").policyIsGreen():
+            if (now - self.timeLastAmpsDesiredFlipped) < self.startStopDelay:
+                dampenChanges = True
+        else:
+            self.timeLastAmpsDesiredFlipped = 0
 
         if desiredAmpsOffered < minAmpsToOffer:
             logger.debug(
@@ -748,7 +751,9 @@ class TWCSlave:
                         + str(self.minAmpsTWCSupports)
                         + " (self.minAmpsTWCSupports)"
                     )
+
                     desiredAmpsOffered = self.minAmpsTWCSupports
+
                 else:
                     # There is not enough power available to give each car
                     # minAmpsToOffer, so don't offer power to any cars. Alternately,
@@ -797,6 +802,39 @@ class TWCSlave:
                 # so we need to set desiredAmpsOffered to 0
                 logger.debug("no cars charging, setting desiredAmpsOffered to 0")
                 desiredAmpsOffered = 0
+        elif int(self.master.settings.get("chargeRateControl", 1)) == 2:
+            # Exclusive control is given to the Tesla API to control Charge Rate
+            # We offer the maximum wiring amps from the TWC, and ask the API to control charge rate
+
+            # Call the Tesla API to set the charge rate for vehicle connected to this TWC
+            # TODO: Identify vehicle
+            if (
+                int(desiredAmpsOffered) == self.__lastAPIAmpsValue
+                and (
+                    self.__lastAPIAmpsRepeat > 50 or self.__lastAPIAmpsRepeat % 10 != 0
+                )
+            ) or self.__lastAPIAmpsRequest > time.time() - 15:
+                # Unfortunately some API requests just don't result in the desired amperage being set, so we allow one in 10
+                # to be repeated up to 50, as long as none had been sent in the last 15 seconds
+                # This results in a small number of repeat requests sent to the API each time
+                # we change the target charge rate, but adds stability to the process
+                self.__lastAPIAmpsRepeat += 1
+            else:
+                self.__lastAPIAmpsRequest = time.time()
+                self.__lastAPIAmpsRepeat = 0
+                self.__lastAPIAmpsValue = int(desiredAmpsOffered)
+
+                # Determine vehicle to control
+                targetVehicle = (
+                    None if self.getLastVehicle() is None else self.getLastVehicle()
+                )
+
+                self.master.getModuleByName("TeslaAPI").setChargeRate(
+                    int(desiredAmpsOffered), targetVehicle
+                )
+
+            desiredAmpsOffered = int(self.configConfig.get("wiringMaxAmpsPerTWC", 6))
+
         else:
             # We can tell the TWC how much power to use in 0.01A increments, but
             # the car will only alter its power in larger increments (somewhere
@@ -941,16 +979,10 @@ class TWCSlave:
             self.timeLastAmpsDesiredFlipped = now
             logger.debug("lastAmpsDesired flipped - now " + str(desiredAmpsOffered))
 
-        # Keep charger on or off if dampening changes. See reasoning above where
+        # Keep charger on if dampening changes. See reasoning above where
         # I don't turn the charger off till it's been on for a bit.
-        if self.reportedAmpsActual > 0 and desiredAmpsOffered == 0 and dampenChanges:
-            logger.debug("Don't stop TWC " + self.master.hex_str(self.TWCID) + " yet.")
-            desiredAmpsOffered = self.minAmpsTWCSupports
-        elif self.lastAmpsOffered == 0 and desiredAmpsOffered > 0 and dampenChanges:
-            logger.debug(
-                "Don't start charging TWC " + self.master.hex_str(self.TWCID) + " yet."
-            )
-            desiredAmpsOffered = 0
+        if dampenChanges and self.reportedAmpsActual > 0:
+            desiredAmpsOffered = max(self.minAmpsTWCSupports, desiredAmpsOffered)
 
         # set_last_amps_offered does some final checks to see if the new
         # desiredAmpsOffered is safe. It should be called after we've picked a
